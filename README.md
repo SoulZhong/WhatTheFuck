@@ -33,12 +33,89 @@ Redis中数据存储有2种模式：
 
 ### 数据类型
 
+#### Strings
+
+  Strings are the most basic kind of Redis value. Redis Strings are binary safe, this means that a Redis string can contain any kind of data, for instance a JPEG image or a serialized Ruby object.
+  A String value can be at max 512Megabytes in length.
+  You can do a number of interesting things using strings in Redis, for instance you can:
+* Use Strings as atomic counters using commands in INCR family: INCR, DECR, INCRBY.
+* Append to strings with the APPEND command.
+* Use Strings as a random access vectors with GETRANGE and SETRANGE.
+* Encode a lot of data in little space, or create a Redis backed Bllom Filter using GETBIT and SETBIT.
+
+#### Lists
+
+  Redis Lists are simply lists of strings, sorted by insertion order. It is possible to add elements to a Redis List pushing new elements on head(on the left) or on the tail(on the right) of the list.
+
+  The LPUSH command inserts a new element on the head, while RPUSH inserts a new element on the tail. A new list is created when one of this operations is performed against an empty key. Similarly the key is removed from the key space if a list operation will empty the list. There are very handy semantics since all the list commands will behave exactly like they were called with an empty list if called with a non-existing key as argument.
+
+  The max length of a list is 2^32 - 1 elements (4294967295, more than 4 billion elements per list).
+
+  The main feathers of Redis Lists from the point of view of time complexity are the support for constant time insertion and deletion of elements near the head and tail, even with many millions of inserted items. Accessing elements is very fast near the extremes of the list but is slow if you try accessing the middle of a very big list, as it it an O(N) operation.
+
+  You can do many interesting things with Redis Lists, for instance you can:
+* Model a timeline in a social network, using LPUSH in order to add new elements in the user time line, and using LRANGE in order to retrieve a few recently inserted items.
+* You can use LPUSH together with LTRIM to create a list that never exceeds a given number of elements, but just remembers the latest N elements.
+* Lists can be used as a message passing primitive, See for instance the well known Resque Ruby library for creating background jobs.
+* You can do alot more with lists, this data type supports a number of commands, including blocking commands like BLPOP.
+
+#### Sets
+
+Redis sets are an unordered collection of Strings. It is possible to add, remove, and test for existence of members in O(1)(constant time regardless of the number of elements contained inside of Set).
+
+Redis Sets have the desirable property of not allowing repeated members. Adding the same element multiple times will result in a set having a single copy of this element. Practically speaking this means that adding a member does not require a check if exist then add operation.
+
+A very interesting thing about Redis Sets is that they support a number of server side commands to compute sets starting from existing sets, so you can do unions, intersections, differences of sets in very short time.
+
+The max number of members in a set is 2^32-1(4294967295, more than 4 billion of members per set).
+
+You can do many interesting things using Redis Sets, for instance you can:
+
+* You can track unique things using Redis Sets. Want to know all the unique IP addresses visting a giving blog post? Simply using SADD every time you process a page view. You are sure repeated IPs will not be inserted.
+* Redis Sets are good to represent relations. You can create a tagging system with Redis using a Set to represent every tag. Then you can add all the IDs of all the Objects having three tags at the same time? Just use SINTER.
+* You can use Sets to extract elements at a random using the SPOP or SRANDMEMBER commands.
+
+#### Hashes
+
+Redis Hashes are maps between string fields and string values, so they are the perfect data type to represent objects(e.g. A User with a number of fields like name, surname, age, and so forth):
+
+A hash with a few fields (where few means up to one hundred or so) is stored in a way that takes very little space, so you can store millions of objects in a small Redis instance.
+
+While Hashes are used mainly to represent objects, they are capable of storing many elements, so you can use Hashes for many other tasks as well.
+
+Every hash can store up to 2^32-1 field-value pairs(more than 4 billion).
+
+Sorted sets
+
+Redis Sorted Sets are, similar to Redis Sets, non repeating collections of Strings. The difference is that every member of a Sorted Set is associated with scope, that is used in order to take the sorted set ordered, from the smallest to the greatest score. While members are unique, scores may be repeated.
+
+With sorted sets you can add, remove, or update elements in a very fast way(in a time proportional to the logarithm of the number of elements). Since elements are taken in order and not ordered afterwards, you can get range by score or by rank(position) in a very fast way. Accessing the middle of a sorted set is also very fast, so you can Sorted Sets as a smart list non repeating elements where you can quickly access everything you need: element in order, fast existence test, fast access to elements in the middle!
+
+In short with sorted sets you can do a lot of tasks with great performance that are really hard to model in other kind of databases.
+
+With Sorted Sets you can:
+
+* Take a leader board in a massive online game, where every time a new score is submitted you update it using ZADD. You can easily take the top use using ZRANGE, you can also, given an user name, return its rank in the listing using ZRANK. Using ZRANK and ZRANGE together you can show users with a score similar to a given user. All very quickly.
+* Sorted Sets are often used in order to index data that is stored inside Redis. For instance if you have many hashes representing users, you can use a sorted set with elements having the age of user as the score and the ID of the user as the value. So using ZRANGEBYSCORE it will be brivial and fast to retrieve all the users with a given interval of ages.
+
+Sorted Sets are probably the most advanced Redis data types.
+
+#### Bitmaps and HyperLogLogs
+
+Redis also supports Bitmaps and HyperLogLogs which are actually data types based on the String base type, but having their own semantics.
+
 1. String
-    string类型是二进制
+    string类型是二进制安全的。redis的string可以包含任何数据。比如jpg图片或者序列化的对象。
+    string类型是redis最基本的数据类型，一个redis中字符串value最多可以是512M。
 2. Hash
+    Redis hash是一个键值对集合。
+    Redis hash是一个string类型的field和value的映射表，hash特别适合用于存储对象。
 3. List
+    Redis列表是简单的字符串列表，按照出入顺序排序。可以添加元素到列表的头部（左边）或者尾部（右边）。他的底层实际是一个链表。
 4. Set
+    Set是string类型的无序集合。通过HashTable实现。
 5. zset
+    zset和set一样也是string类型元素的集合，且不允许重复成员。不同的是每个元素会关联一个double类型的分数。redis正是通过分数来为集合中的成员进行从小到大的排序。zset的成员是唯一的，但分数（score）却可以重复。
 
 ## 分布式锁
 
@@ -121,6 +198,49 @@ version表示对数据节点数据内容的变更次数，强调的是变更次�
 
 ### Leader选举机制
 
+### ACL---保障数据的安全
+
+ACL全称为Access Control List（访问控制列表），用于控制资源的访问权限。zk利用ACL策略控制节点的访问权限，如节点数据读写、节点创建、节点删除、读取子节点列表、设置节点权限等。
+在传统的文件系统中，ACL分为两个维度，一个是属组，一个是权限，一个属组包含多个权限，一个文件或目录拥有某个组的权限即拥有了组里的所有权限，文件或子目录默认会继承自父目录的ACL。（例如linux系统的权限控制）
+而在Zookeeper中，znode的ACL是没有继承关系的，每个znode的权限都是独立控制的，只有客户端满足znode设置的权限要求时，才能完成相应的操作。Zookeeper的ACL，氛围三个维度：schema、id、permission，通常表示为：schema:id:permission，schema代表授权策略，id代表用户，permission代表权限。
+
+### Paxos算法
+
+#### 定义
+
+算法中的参与者主要分为三个角色，同时每个参与者又可兼领多个角色：
+
+1. proposer提出提案，提案信息包括提案编号和提议的value；
+
+2. acceptor收到提案后可以接受（accept）提案；
+
+3. learner只能“学习”被批准的填；
+
+算法保证一致性的基本语义：
+
+1. 决议（value）只有在被proposers提出后才能被批准（未经批准的决议称为“提案（proposal）”）；
+
+2. 在一次Paxos算法的执行实例中，只批准（chose）一个value；
+
+3. learners只能获得被批准（chosen）的value；
+
+有上面的三个语义可以演化为四个约束：
+
+1. P1：一个acceptor必须接受（accept）第一次收到的提案；
+
+2. P2a：一旦一个具有value v的提案被批准（chosen），那么之后的任何acceptor再次接受（accept）的提案必须具有value v;
+
+3. P2b：一旦一个具有value v的提案被批准（chosen），那么以后任何proposer提出的提案必须具有value v；
+
+4. P2c：如果一个编号为n的提案具有value v，那么存在一个多数派，要么他们中所有人都没有接受（accept）编号小于n的任何提案，要么他们已经接受（accept）的所有编号小于n的提案中编号最大的那个提案具有的value v;
+
+#### 基本算法
+
+算法（决议的提出与批准）主要分为两个阶段：
+
+1. prepare阶段：
+
+1.1 当Pro
 
 ### 悲观锁、乐观锁
 
