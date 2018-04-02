@@ -12,7 +12,7 @@
 
 ### 联合索引
 
-## Redis
+## Redis [Redis命令](http://redisdoc.com/) [Redis Doc](https://github.com/antirez/redis-doc)
 
 Redis中数据存储有2种模式：
 
@@ -31,7 +31,7 @@ Redis中数据存储有2种模式：
 * RDB(Redis DataBase)
     在某个时间点将数据写入一个临时文件，持久化结束后，用这个临时文件替换上次持久化的文件。通过配置redis在n秒内如果超过m个key被修改，执行一次RDB操作。这个操作类似于保存一次redis所有数据，所以也叫snapshots。
 
-### 数据类型
+### [数据类型](https://github.com/antirez/redis-doc/blob/master/topics/data-types.md)
 
 #### Strings
 
