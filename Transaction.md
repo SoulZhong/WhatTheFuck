@@ -1,7 +1,8 @@
 # 事务
 
-## 分布式事务
+[《Java事务设计策略》](https://ress.infoq.com/minibooks/JTDS/zh/pdf/java-transactions-book-cn.pdf?Expires=1523267885&Signature=Y35UBKCPceFADVdvpjMoU8LVJhpuZh7LxasG9v4Y14cTSQtT6BmV2AkS95h00-Os~IbKlkgg7SVMRsMulJEtna0~AQHzCLCnBdnvipYKx1drobhgGf9E24iGI4egr0T22tPmFqvG7j4Bi8eXb5glhZEWgvlXsSMZF-iIwSJONHQ_&Key-Pair-Id=APKAIMZVI7QH4C5YKH6Q)
 
+## 分布式事务
 
 ### 什么是XA事务
 
@@ -24,6 +25,8 @@ XA就是X/Open DTP定义的交易中间件与数据库之间的接口规范（�
 XA接口是双向的系统接口，分布式事务是由一个应用程序（Application Program）、一个事务管理器（Transaction Manager）以及一个或多个资源管理器（Resource Manager）之间形成通信桥梁。事务管理器控制着JTA事务，管理事务生命周期，并协调资源。
 
 在JTA中，事务管理器抽象为javax.transaction.TransactionManager接口，并通过底层事务服务（即JTS）实现。资源管理器负责控制和管理实际资源（如数据库或JMS队列）。
+
+![XA](https://raw.githubusercontent.com/SoulZhong/draw/master/XA.png)
 
 XA分布式事务是由一个或者多个Resource Manager,一个事务管理器Transaction Manager以及一个应用程序Application Program组成。
 
